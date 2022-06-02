@@ -1,0 +1,92 @@
+---
+- hosts: hosts_agent
+  become: yes
+  become_method: sudo
+  ignore_errors: yes
+  tasks:
+    - name: Copia script de instalacao Ubuntu
+      copy:
+        src: ./install-ubuntu.sh
+        dest: /tmp/
+      when: (ansible_distribution == 'Ubuntu')
+
+    - name: Executa o script de instalacao do Ubuntu
+      shell: bash /tmp/install-ubuntu.sh
+      when: (ansible_distribution == 'Ubuntu')
+
+    - name: Instalando Agente - Stretch
+      apt:
+        name: zabbix-agent=1:3.0.7+dfsg-3
+        update_cache: yes
+      when: (ansible_distribution_release == 'stretch')
+
+## Install debian 10 (buster)
+
+    - name: download zabbix deb file - Buster
+      get_url:
+        url: https://repo.zabbix.com/zabbix/6.0/debian/pool/main/z/zabbix-release/zabbix-release_6.0-1+debian10_all.deb
+        dest: /tmp/
+      when: ansible_distribution_release == 'buster'
+
+    - name: Install zabbix deb - Buster
+      apt:
+        deb: "/tmp/zabbix-release_6.0-1+debian10_all.deb"
+      when: ansible_distribution_release == 'buster'
+    
+    - name: Instalando Agente - Buster
+      apt:
+        name: zabbix-agent=1:6.0.4-1+debian10
+        update_cache: yes
+      when: (ansible_distribution_release == 'buster')
+
+    - name: Instalando Agente - Jessie
+      apt:
+        name: zabbix-agent=1:2.2.7+dfsg-2+deb8u3
+        force: true
+        update_cache: yes
+      when: (ansible_distribution_release == 'jessie')
+
+    - name: Copiando arquivo de configuracao do agente SO Debian
+      copy:
+        src: ./zabbix_agentd.conf
+        dest: /etc/zabbix/zabbix_agentd.conf
+        owner: root
+        group: root
+      when: (ansible_distribution_release == 'stretch') or (ansible_distribution_release == 'buster') or (ansible_distribution_release == 'jessie')
+
+    - name: Copiando arquivo de configuracao do agente SO Ubuntu
+      copy:
+        src: ./zabbix_agentd-ubuntu.conf
+        dest: /etc/zabbix/zabbix_agentd.conf
+        owner: root
+        group: root
+      when: (ansible_distribution == 'Ubuntu')
+
+    - name: Reiniciando servico do zabbix
+      service:
+        name: zabbix-agent
+        state: restarted
+      when: (ansible_distribution_release == 'stretch') or (ansible_distribution_release == 'buster') or (ansible_distribution_release == 'jessie') or (ansible_distribution == 'Ubuntu')
+
+    - name: Liberando porta de conexao servidor-agente
+      iptables:
+        chain: INPUT
+        source: your.ip.server
+        protocol: tcp
+        destination_port: '10050'
+        ctstate: NEW
+        syn: match
+        jump: ACCEPT
+        comment: Porta de conexao do Servidor Zabbix
+      when: (ansible_distribution_release == 'stretch') or (ansible_distribution_release == 'buster') or (ansible_distribution_release == 'jessie') or (ansible_distribution == 'Ubuntu')
+
+    - name: Liberando ping para comunicacao com o servidor
+      iptables:
+        chain: INPUT
+        source: your.ip.server
+        protocol: icmp
+        icmp_type: echo-request
+        jump: ACCEPT
+        comment: Liberando ping para do Servidor Zabbix
+      when: (ansible_distribution_release == 'stretch') or (ansible_distribution_release == 'buster') or (ansible_distribution_release == 'jessie') or (ansible_distribution == 'Ubuntu')
+...

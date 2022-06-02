@@ -1,0 +1,6 @@
+[virtual_hosts]
+foo_debian
+
+[hosts_agent:children]
+virtual_hosts
+hosts_ubuntu_20
