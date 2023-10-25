@@ -22,6 +22,9 @@ A partir do [gitlab](),
 3. Para instalar em uma porta específica como a 2222, utilize a variável 'ansible_ssh_port=2222' após "foo"
 4. Salve as alterações.
 
+# ATENÇÃO!
+> É necessário  que os arquivos de configuração e de instalação sejam modificados de acordo com a versão do agente que  se deseja instalar!
+
 # Mantenedor
 
 Nome            | E-mail          | Lattes     | Linkedin
